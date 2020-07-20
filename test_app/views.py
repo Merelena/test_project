@@ -2,20 +2,30 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.generics import CreateAPIView, ListAPIView
 from .models import Book
-from .serializers import BookListSerializer, OneBookSerializer, BookCreateSerializer
+from .serializers import BookSerializer, OneBookSerializer, BookCreateSerializer
+from rest_framework import viewsets
+from rest_framework import mixins
 
 
-class BookListView(ListAPIView):
-    serializer_class = BookListSerializer
+class BookView(mixins.CreateModelMixin,
+               mixins.ListModelMixin,
+               mixins.RetrieveModelMixin,
+               viewsets.GenericViewSet):
     queryset = Book.objects.all()
-
-
-class OneBookView(APIView):
-    def get(self, request, book_id):
-        book = Book.objects.filter(id=book_id)
-        serializer = OneBookSerializer(book, many=True)
-        return Response({"books": serializer.data})
-
-
-class BookCreateView(CreateAPIView):
     serializer_class = BookCreateSerializer
+
+    def list(self, request):
+        BookView.queryset = Book.objects.all()
+        serializer = BookSerializer(BookView.queryset, many=True)
+        return Response(serializer.data)
+
+    def retrieve(self, request, book_id=None):
+        instance = BookView.queryset.filter(id=book_id)
+        serializer = OneBookSerializer(instance=instance, many=True)
+        return Response(serializer.data)
+
+    def create(self, request, *args, **kwargs):
+        serializer = BookCreateSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(serializer.data)
