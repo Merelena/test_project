@@ -3,6 +3,7 @@ from .models import Book
 from .serializers import BookSerializer, OneBookSerializer, BookCreateSerializer
 from rest_framework import viewsets
 from rest_framework import mixins
+from .filtres import BookFilter
 
 
 class BookView(mixins.CreateModelMixin,
@@ -15,6 +16,7 @@ class BookView(mixins.CreateModelMixin,
     def list(self, request):
         BookView.queryset = Book.objects.all()
         serializer = BookSerializer(BookView.queryset, many=True)
+        filter = BookFilter(request.GET, queryset=BookView.queryset)
         return Response(serializer.data)
 
     def retrieve(self, request, book_id=None):
