@@ -3,7 +3,8 @@ from .models import Book
 from .serializers import BookSerializer, OneBookSerializer, BookCreateSerializer
 from rest_framework import viewsets
 from rest_framework import mixins
-from .filtres import BookFilter
+from .filters import BookFilter
+from django_filters.rest_framework import DjangoFilterBackend
 
 
 class BookView(mixins.CreateModelMixin,
@@ -11,13 +12,14 @@ class BookView(mixins.CreateModelMixin,
                mixins.RetrieveModelMixin,
                viewsets.GenericViewSet):
     queryset = Book.objects.all()
-    serializer_class = BookCreateSerializer
+    filter_backends = [DjangoFilterBackend]
+    filterset_class = BookFilter
 
-    def list(self, request):
-        BookView.queryset = Book.objects.all()
-        serializer = BookSerializer(BookView.queryset, many=True)
-        filter = BookFilter(request.GET, queryset=BookView.queryset)
-        return Response(serializer.data)
+    def get_serializer_class(self):
+        if self.request.method == 'GET':
+            return BookSerializer
+        if self.request.method == 'POST':
+            return BookCreateSerializer
 
     def retrieve(self, request, book_id=None):
         instance = BookView.queryset.filter(id=book_id)
